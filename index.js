@@ -16,21 +16,21 @@ app.get('/pay', (req, res) => {
   
     const paymentDetails = {
         key: '6X2iBq', 
-        txnid: 't6svtqtjRdl4ws',
-        amount: '1',
+        txnid: 't6svtqtjRdl4ws8',
+        amount: '0.1',
         productinfo: 'iPhone',
         firstname: 'Ashish',
         lastname: 'Kumar',
         email: 'test@gmail.com',
-        phone: '9988776655',
-        surl: 'https://apiplayground-response.herokuapp.com/', // Success URL
-        furl: 'https://apiplayground-response.herokuapp.com/', // Failure URL
+        phone: '9690742886',
+        surl: 'https://5b95-2405-201-4028-b90b-485c-b5e5-d9ad-6a0a.ngrok-free.app/webhook', 
+        furl: 'https://apiplayground-response.herokuapp.com/', 
         salt: 'mcuyBrSdirqcH9bLowVLoe9eca77ttX6'
     };
 
    
     paymentDetails.hash = generateHash(paymentDetails);
-    console.log(paymentDetails.hash);
+   
    
     const form = `
         <html>
@@ -60,49 +60,39 @@ app.post('/webhook', (req, res) => {
     const webhookData = req.body;
 
    
-    const { txnid, status, key, amount, email, salt, hash } = webhookData;
+    const { txnid, status, key, amount, email, salt, hash, productinfo, firstname } = webhookData;
 
-   
+  
+
+  
     const generatedHash = generateHash({
         key,
         txnid,
         amount,
-        productinfo: webhookData.productinfo,
-        firstname: webhookData.firstname,
+        productinfo,
+        firstname,
         email,
         salt
     });
 
-   
+    console.log("generatedHash:", generatedHash          ," ------------------- -----------",        "hash:"  , hash)
+
+    
     if (generatedHash !== hash) {
-        console.log('Hash mismatch, potential tampering');
+        console.log('Hash mismatch detected!');
         return res.status(400).send('Invalid hash');
     }
 
-   
-    switch (status) {
-        case 'success':
-            console.log(`Payment successful for transaction ID: ${txnid}`);
-          
-            break;
-        case 'failure':
-            console.log(`Payment failed for transaction ID: ${txnid}`);
-         
-            break;
-        case 'refund':
-            console.log(`Payment refunded for transaction ID: ${txnid}`);
-          
-            break;
-        case 'dispute':
-            console.log(`Dispute raised for transaction ID: ${txnid}`);
-         
-            break;
-        default:
-            console.log('Unhandled payment status:', status);
-    }
-
+  
+    if (status === 'success') {
+        console.log(`Payment successful for transaction ID: ${txnid}`);
+               res.status(200).send('Transaction processed successfully');
+    } 
     
-    res.status(200).send('Webhook received successfully');
+    else {
+        console.log(`Payment failed or other status for transaction ID: ${txnid}`);
+        res.status(400).send('Unhandled transaction status');
+    }
 });
 
 
